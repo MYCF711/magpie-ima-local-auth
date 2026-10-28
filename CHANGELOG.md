@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.3.2 — 2026-10-28
+
+- README / 评估重新定位：**最佳用途是 `dsh-chess-context` 的免费摘要模型**（单轮、结构化、无工具），不是 DSH 的 agent 后端。
+- 实测（8 条失败边 + 2 条约束，3 次采样）：ima V4.1-Flash 保留 **8/8 死路、2/2 约束、1,887 字符**；官方 8 段模板 5/8、0/2。
+- 文档补 `summarizationProvider: magpie` / `summarizationModel: ima/deepseek-v4.1-flash` 配置与证据链接。
+
 ## 0.3.1 — 2026-10-28
 
 - **工具模式改为增量流式**：不再 `collect()` 全部收完再发。正文逐帧 `delta.content`，思考逐帧 `delta.reasoning_content`；只有开头像 JSON（`{` / `[` / ```）时才缓冲到结尾判定 `tool_calls`。修复 DSH 下“看起来不是流式”的问题。

@@ -7,12 +7,12 @@
 
 | 反代对象 | 价值 | 判定 |
 |---|---|---|
-| **免费模型**（DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash + 4 个 Think 变体） | **中低：纯文本 chat 可用；DSH agent 不可用** | 4 个基础 + 4 个思考变体、不扣算力、流式已修；但实测 Think 变体把 DSH 工具契约当 prompt injection，基础模型工具协议只在单测/短提示里稳定，真实 DSH 会话体验差 |
+| **免费模型**（DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash + 4 个 Think 变体） | **高：记忆压缩 / 棋谱摘要；低：DSH agent** | 单轮结构化摘要实测 3/3 次保留 8/8 死路、2/2 约束（官方模板 5/8、0/2）；但当 agent 时 Think 把工具契约当 injection，真实 DSH 会话体验差 |
 | **Copilot 积分模型**（Hy3 / Hy4 / V4.1 / MiMo / GLM / MiniMax / Kimi…） | **模型能力高，但本插件不接** | Copilot 是 ima 的云端 agent（`robot_type=15` + `command_info.type=2000`），正是 today 式结果的来源；即使能拿到完整目录也默认不列 |
 | 知识库文件 / 文档管理 | 低（本次不做） | 是 ima 的知识库业务，不是模型；对 magpie 供应商没有直接价值 |
 | 图片生成 / 播客等 | 低（本次不做） | 与 magpie 的 chat 供应商无关 |
 
-**一句话：免费模型能当“不要钱的纯文本 chat”用，但达不到“正常 DeepSeek 官方 API”的 agent 体验——把它当 DSH 模型后端不值得；Copilot 积分模型能力更强，但它是云端 agent，按约束不接。**
+**一句话：免费模型真正值钱的地方是“单轮结构化摘要”（棋谱/记忆压缩），不是“agent 后端”；把它当 DSH agent 不值得，把它当 `dsh-chess-context` 的摘要模型很合适。Copilot 积分模型能力更强，但它是云端 agent，按约束不接。**
 
 ## 关键发现：`CLIENT-TYPE=256021` 是指纹钥匙
 
@@ -128,6 +128,32 @@ OpenAI tool_calls；**基础模型 `toolcall: true`，Think 变体 `toolcall: fa
 mindmap_gen/memory_recall”这些 ima 自带工具，没有执行 DSH 任务；输出冗长、结论不可信，
 且看起来不是流式。这是“不能是云端 agent”那条约束的现场证据：**不是模型没能力，是它不
 接受调用方的 system prompt + tools。**
+
+## 真正的用途：记忆压缩 / 棋谱摘要
+
+`dsh-chess-context` 的 fold 是单轮、无工具、结构化输出；硬事实（根目标、约束、每条失败边+seq）
+由规则给定，模型只负责压缩表达。这个任务正好避开 ima 模型的短板（身份/工具/agent 规则），
+用它的长上下文和免费额度。
+
+把摘要模型指向 ima：
+
+```yaml
+summaryMode: hybrid
+summarizationProvider: magpie
+summarizationModel: ima/deepseek-v4.1-flash
+```
+
+实测（同一份 8 条失败边 + 2 条约束的合成会话，3 次采样）：
+
+| 模板 | 死路保留 | 约束保留 | 摘要长度 |
+|---|---|---|---|
+| 本插件棋谱模板 + ima V4.1-Flash | **8/8（3/3 次）** | **2/2（3/3 次）** | 1,887 字符 |
+| 官方 8 段模板 | 5/8 | 0/2 | ~3,072 字符 |
+
+复跑：`cd projects/dsh-chess-context && MAGPIE_MODEL=ima/deepseek-v4.1-flash node test/real-model.mjs --runs 3`
+
+**所以反代价值不是“0”，而是定位换了：它不该当 DSH 的 agent 模型，该当
+`dsh-chess-context` 的免费摘要模型。** 这台机器正在用的棋谱压缩正好缺这一层。
 
 ## 与 CodeBuddy / 其它免费源的对比
 
