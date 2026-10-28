@@ -1,0 +1,6 @@
+node_modules/
+dist/
+secrets/
+*.log
+.ima-login.json
+.DS_Store

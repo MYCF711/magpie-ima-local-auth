@@ -1,0 +1,11 @@
+{
+  "package": "magpie-ima-local-auth",
+  "name": "ima (local client)",
+  "providers": [
+    "ima"
+  ],
+  "summary": {
+    "en": "The free DeepSeek and Tencent HY models in your ima.copilot desktop app, imported from the client already signed in on this machine.",
+    "zh": "把本机已登录的 ima.copilot 客户端里的 DeepSeek / Tencent HY 免费模型接进 magpie，不用粘贴 cookie。"
+  }
+}

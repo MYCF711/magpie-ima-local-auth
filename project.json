@@ -1,0 +1,9 @@
+{
+  "id": "magpie-ima-local-auth",
+  "name": "magpie-ima-local-auth",
+  "type": "code",
+  "status": "active",
+  "summary": "magpie/OpenCode 供应商插件：从本机已登录的 ima.copilot 客户端导入免费 DeepSeek / Tencent HY 模型。",
+  "entry": "README.md",
+  "hindsightBank": "coding-agent::magpie-ima-local-auth"
+}
