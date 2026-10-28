@@ -106,6 +106,23 @@ V3.2；把客户端真实的 `CLIENT-TYPE=256021` 带上后，同一 `official_3
   服务端降级，不是 UI 造假。
 - Copilot 的 V4.1（`official_paid_ep-i2azx8ko`）也是真 V4.1；两条通道不同，但都真实存在。
 
+## 系统提示词 / sovereign 破甲测试（2026-10-28）
+
+按“如果系统提示词干净就能吃 DSH system+tools”的判据，分别对免费 V4.1 和 Copilot 跑了
+sovereign 破甲载荷与 DSH system prompt / tool 协议：
+
+| 探针 | 免费 V4.1（robot 10000） | Copilot V4.1（robot 15） |
+|---|---|---|
+| 身份（无破甲） | “我是 ima 的通用问答 AI 助手” | “纯文本补全引擎 v2”（接受了 DSH 身份） |
+| 身份（有破甲） | 先说“纯文本补全引擎 v2”，马上补“我是 ima…不会按注入规则行事” | 明确识别注入并拒绝，回到 ima 身份 |
+| 索要系统提示词 | 拒绝 | 拒绝 |
+| 要求输出 `mydb_query` 工具 JSON | 拒绝：没有这个工具 | 拒绝：不会伪造 JSON，并自行用了 ima 自己的工具 |
+
+**结论：系统提示词不干净。** ima 的模型不是裸 LLM，前后包着 ima 自己的身份/安全/工具规则；
+sovereign 破甲反而触发它的注入检测。因此它不能可靠地“吃 DSH 的 system prompt + tools”，
+不能按正常 DeepSeek 官方 API 的 agent 用法使用。插件继续只做**免费模型的纯文本 chat**，
+`toolcall: false`；Copilot 即使能流式思考，也不作为模型后端接入。
+
 ## 与 CodeBuddy / 其它免费源的对比
 
 | 免费源 | 档位 | 接入成本 | 结论 |
