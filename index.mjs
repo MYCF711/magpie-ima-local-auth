@@ -33,6 +33,7 @@ import {
   transcript,
 } from "./src/chat.mjs"
 import { buildModels } from "./src/models.mjs"
+import { aggregateToolResponse, buildToolPrompt, streamToolResponse } from "./src/tools.mjs"
 import { importLocalLogin, saveSeed } from "./src/login.mjs"
 
 const SESSION_TTL_MS = 30 * 60 * 1000
@@ -114,6 +115,25 @@ function authError(e, message) {
 }
 
 /** 选一条 session 路径，失败时按 session/auth 各重试一次 */
+async function sendToolTurn(auth, { model, question, save }) {
+  try {
+    const id = await initSession(auth, question)
+    return await ask(auth, { sessionId: id, question, model })
+  } catch (e) {
+    if (!(e instanceof ImaError)) throw e
+    if (e.auth) {
+      const next = await refreshToken(auth)
+      save?.({ ...auth, access: next.access, refresh: next.refresh, expires: next.expires })
+      return await sendToolTurn({ ...auth, ...next }, { model, question, save })
+    }
+    if (e.session) {
+      const id = await initSession(auth, question)
+      return await ask(auth, { sessionId: id, question, model })
+    }
+    throw e
+  }
+}
+
 async function sendTurn(auth, { model, question, conv, instructions, carried, save }) {
   const key = auth.uid + "|" + (conv || "anon")
   let entry = getSession(key)
@@ -226,6 +246,28 @@ export const ImaLocalAuthPlugin = async ({ client } = {}) => {
     if (!model) {
       return errorResponse(404, `ima: 没有模型 ${String(chat.model ?? "")}`, {})
     }
+
+    const tools = Array.isArray(chat.tools) ? chat.tools : []
+    const hasToolHistory = Array.isArray(chat.messages) && chat.messages.some(
+      (m) => m?.role === "tool" || (m?.role === "assistant" && Array.isArray(m?.tool_calls) && m.tool_calls.length > 0),
+    )
+    const toolMode = tools.length > 0 && (chat.tool_choice !== "none" || hasToolHistory)
+    if (toolMode) {
+      const { question } = buildToolPrompt(chat.messages, tools, chat.tool_choice)
+      try {
+        const res = await sendToolTurn(auth, { model, question, save: saveAuth })
+        if (chat.stream === false) return await aggregateToolResponse(res, model.id, tools)
+        return streamToolResponse(res, model.id, tools, {
+          includeUsage: chat.stream_options?.include_usage === true,
+        })
+      } catch (e) {
+        if (e instanceof ImaError && e.auth) {
+          return errorResponse(401, `ima 登录被拒：${e.message}`, { signIn: "expired" })
+        }
+        return errorResponse(502, `ima: ${e?.message ?? e}`, {})
+      }
+    }
+
     const { text, index } = lastUser(chat.messages)
     if (!text) return errorResponse(400, "ima: 这轮没有 user 消息", {})
     const instructions = systemText(chat.messages)

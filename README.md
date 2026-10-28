@@ -96,10 +96,10 @@ magpie plugin list
 不用。登录导入之后，magpie 用 refresh token 续期；客户端只在导入那一下需要存在。
 
 **Q：为什么没有 Copilot 的模型？**
-Copilot 是 ima 的云端 agent（`robot_type=15`），不是模型通道。本机版本直接返回「当前版本暂不支持」；插件按“模型供应商”定位，不把 agent 包装成模型。
+Copilot 是 ima 的云端 agent（`robot_type=15`），不是模型通道。它的 V4.1 / Hy3 / Hy4 / GLM / MiMo / MiniMax / Kimi 目录确实存在、也支持流式思考；插件按“模型供应商”定位，不把 agent 包装成模型。
 
 **Q：支持工具调用 / 图片吗？**
-不支持。ima 的问答接口没有 tool 通道，免费模型也不收图；插件在模型条目上如实声明 `toolcall: false` / `attachment: false`。
+**工具调用支持**：ima 的问答接口没有原生 tools 字段，插件用文本工具协议模拟——把调用方的工具表写进问题，模型输出 `{"tool_calls":[...]}`，插件再转成 OpenAI 的 `tool_calls`；工具结果会作为 `role:"tool"` 回灌。已用 `task_plan` / `subagent_spawn` 和 DSH 的 `todo_write` / `write` 实测。图片**不支持**（`attachment: false`）。
 
 **Q：上下文窗口是多少？**
 ima 的模型目录不下发窗口大小。插件把 `limit.context` 留 0，让 magpie 用它自己的模型库；不写一个猜的数字。

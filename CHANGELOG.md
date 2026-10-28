@@ -1,5 +1,13 @@
 # 更新记录
 
+## 0.3.0 — 2026-10-28
+
+- **工具调用**：新增 `src/tools.mjs` 文本工具协议。把 OpenAI tools 写成提示，解析模型输出
+  `{"tool_calls":[...]}`，转成 OpenAI `tool_calls`；支持 `role:"tool"` 结果回灌、流式/非流式；
+  模型条目声明 `toolcall: true`。实测 `task_plan` / `subagent_spawn` 5/5，DSH `write` 端到端成功。
+- 工具模式每个请求用全新 ima session + 完整历史，避免单问 session 丢工具上下文。
+- README / docs 修正：ima 不是裸 LLM，但正常工具契约可用；sovereign 破甲会触发注入检测，不要用。
+
 ## 0.2.0 — 2026-10-28
 
 - **修复客户端指纹**：`x-ima-cookie` 的 `CLIENT-TYPE` 改为 ima 2.6.15 实际值 `256021`。没有它，服务端静默退回旧目录（DeepSeek V3.2 / HY 2.0，Copilot 只有默认模型）；有了它，免费目录变为 **DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash（各带 Think 变体）**，Copilot `scene:1` 也能读到完整积分目录。

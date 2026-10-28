@@ -97,6 +97,14 @@ HEARTBEAT
 V4.1-Flash `official_paid_ep-i2azx8ko`）；但 Copilot 走 `robot_type=15`，是 ima 的云端
 agent，所以默认不列。
 
+### 5.1 工具调用协议
+
+ima 没有 OpenAI 的 `tools` 字段。`src/tools.mjs` 把工具表写进问题，要求模型输出
+`{"tool_calls":[{"name":"...","arguments":{...}}]}`；插件解析后转成 OpenAI `tool_calls`。
+工具结果（`role:"tool"`）会被拼回下一次问题。已实测 `task_plan` / `subagent_spawn` 5/5、
+DSH 的 `write` 端到端成功。sovereign 破甲不要用——它反而触发 ima 的注入检测，正常工具契约
+就够了。工具模式每个请求开新 ima session，避免单问 session 丢工具上下文。
+
 ## 6. 被否掉的方案
 
 - **云端 cookie 直连**：magpie-ima-auth 走的就是它；它把 ima 的 agent 会话包装成 chat，

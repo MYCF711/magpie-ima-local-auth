@@ -47,7 +47,7 @@ function entry(id, name, thinking, { free = true, rate = null } = {}) {
     capabilities: {
       temperature: false,
       reasoning: !!thinking,
-      toolcall: false,
+      toolcall: true,
       attachment: false,
       input: { text: true, image: false },
       output: { text: true },

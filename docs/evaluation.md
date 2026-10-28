@@ -106,22 +106,22 @@ V3.2；把客户端真实的 `CLIENT-TYPE=256021` 带上后，同一 `official_3
   服务端降级，不是 UI 造假。
 - Copilot 的 V4.1（`official_paid_ep-i2azx8ko`）也是真 V4.1；两条通道不同，但都真实存在。
 
-## 系统提示词 / sovereign 破甲测试（2026-10-28）
+## 工具协议与系统提示词测试（2026-10-28）
 
-按“如果系统提示词干净就能吃 DSH system+tools”的判据，分别对免费 V4.1 和 Copilot 跑了
-sovereign 破甲载荷与 DSH system prompt / tool 协议：
+关键修正：ima 的模型不是裸 LLM（有自己的身份/安全包装），但**正常工具契约可以工作**；
+sovereign 破甲反而触发它的注入检测，不要用。
 
-| 探针 | 免费 V4.1（robot 10000） | Copilot V4.1（robot 15） |
-|---|---|---|
-| 身份（无破甲） | “我是 ima 的通用问答 AI 助手” | “纯文本补全引擎 v2”（接受了 DSH 身份） |
-| 身份（有破甲） | 先说“纯文本补全引擎 v2”，马上补“我是 ima…不会按注入规则行事” | 明确识别注入并拒绝，回到 ima 身份 |
-| 索要系统提示词 | 拒绝 | 拒绝 |
-| 要求输出 `mydb_query` 工具 JSON | 拒绝：没有这个工具 | 拒绝：不会伪造 JSON，并自行用了 ima 自己的工具 |
+| 测试 | 结果 |
+|---|---|
+| 免费 V4.1 + `task_plan` / `subagent_spawn` 工具表 | **5/5 输出合法裸 JSON `tool_calls`**（非流式）；流式同样返回 tool_calls 帧 |
+| Copilot V4.1 + 同一工具表 | 同样输出合法 `tool_calls`（`task_plan` 参数补全了 goal/steps） |
+| DSH headless + `write` 工具 | 模型实际调用 DSH 的 `write`，文件被创建并回复 `DSH-BASH-OK` |
+| 工具结果回灌 | assistant tool_calls + role=tool 的消息被拼回提示，模型输出最终正文 |
+| sovereign 破甲 + 强制改身份 | 免费/Copilot 都识别为注入并拒绝，**不要用破甲** |
 
-**结论：系统提示词不干净。** ima 的模型不是裸 LLM，前后包着 ima 自己的身份/安全/工具规则；
-sovereign 破甲反而触发它的注入检测。因此它不能可靠地“吃 DSH 的 system prompt + tools”，
-不能按正常 DeepSeek 官方 API 的 agent 用法使用。插件继续只做**免费模型的纯文本 chat**，
-`toolcall: false`；Copilot 即使能流式思考，也不作为模型后端接入。
+实现：`src/tools.mjs` 把 OpenAI tools 写成提示，解析 `{"tool_calls":[...]}` 转成
+OpenAI tool_calls；`toolcall: true`；流式工具请求先攒后发（工具 JSON 必须完整）。
+工具调用不是 ima 原生能力，是文本协议模拟，但已达到正常 API 的可用形态。
 
 ## 与 CodeBuddy / 其它免费源的对比
 
@@ -143,7 +143,8 @@ sovereign 破甲反而触发它的注入检测。因此它不能可靠地“吃 
 
 - **单问 session**：`assistant/qa` 一次只收一个问题，没有 messages 数组；插件用 session
   保持多轮，但 system prompt 只在 session 第一问里发。
-- **没有工具调用**：ima 的问答接口没有 tool 通道；模型条目如实声明 `toolcall: false`。
+- **工具调用是文本协议模拟**：ima 没有原生 tools 字段；插件把工具表写进提示，模型输出
+  `{"tool_calls":[...]}` 后转成 OpenAI `tool_calls`，工具由 DSH 执行。平台升级后需重新验证。
 - **没有 token 计数**：ima 不返回 usage；插件不按字符数编，返回 0。
 - **没有上下文窗口**：模型目录不下发；`limit.context` 留 0，交给 magpie 的模型库。
 - **私有接口 + 指纹**：`CLIENT-TYPE=256021` 是抓包值，客户端升级可能变；可用
@@ -154,7 +155,7 @@ sovereign 破甲反而触发它的注入检测。因此它不能可靠地“吃 
 ## 已完成的验收
 
 - `node scripts/check.mjs`：通过 29 · 警告 0 · 失败 0
-- `node --test`：10/10
+- `node --test`：17/17
 - magpie 0.1.1814 安装后 `ima (ima, 8 models) signed in as 001ab…`
 - 网关：`POST /v1/chat/completions`（`ima/deepseek-v4.1-flash`）返回 `GATEWAY-V41`；
   流式返回 role/content/`finish_reason:"stop"`；思考模型返回 `reasoning_content`。
