@@ -13,6 +13,7 @@
 // 只打印账号与有效期，不打印 token。
 
 import { saveSeed, SEED_FILE } from "../src/login.mjs"
+import { CLIENT_TYPE } from "../src/context.mjs"
 
 const argv = process.argv.slice(2)
 const get = (name, fallback = "") => {
@@ -97,6 +98,7 @@ const state = {
   q36: device?.q36 || "",
   iua: device?.qua || "",
   extensionVersion: version,
+  clientType: process.env.IMA_CLIENT_TYPE || CLIENT_TYPE,
   accountId: account?.user_info?.open_info?.nickname || "ima.copilot",
   nickname: account?.user_info?.open_info?.nickname || "",
   source: `cdp:${port}`,

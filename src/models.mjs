@@ -84,6 +84,22 @@ export function buildModels(rows = []) {
     const thinking = thinkingName(name)
     models[id] = entry(id, name, thinking, { free, rate })
     index.set(id, { id, name, type, modelId, thinking })
+
+    // ima 的免费模型用 sub_model_infos 带一个深度思考变体：
+    //   {"0":{model_type:3,...},"1":{model_type:1,...}}
+    // 把它也做成独立模型，用户才能在 magpie 里选思考档。
+    for (const sub of Object.values(row?.sub_model_infos ?? {})) {
+      const subType = Number(sub?.model_type)
+      const subModelId = String(sub?.model_id ?? "")
+      if (!Number.isFinite(subType) || !subModelId) continue
+      if (subType === type && subModelId === modelId) continue
+      let subId = `${slug(name)}-think`
+      if (used.has(subId)) subId = `${subId}-${subType}`
+      used.add(subId)
+      const subName = `${name} Think`
+      models[subId] = entry(subId, subName, true, { free, rate })
+      index.set(subId, { id: subId, name: subName, type: subType, modelId: subModelId, thinking: true })
+    }
   }
   return { models, index }
 }

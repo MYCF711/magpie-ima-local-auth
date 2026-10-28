@@ -28,16 +28,19 @@
 
 | 发行商 | 代表模型 | 思考 | 计费 |
 |---|---|---|---|
-| DeepSeek | `deepseek-v3.2` | — | 免费（知识库问答） |
-| DeepSeek | `deepseek-v3.2-think` | ✓ | 免费（知识库问答） |
-| Tencent | `tencent-hy-2.0` | — | 免费（知识库问答） |
-| Tencent | `tencent-hy-2.0-think` | ✓ | 免费（知识库问答） |
+| DeepSeek | `deepseek-v4.1-flash` | 客户端可切快速/深度 | 免费（知识库问答） |
+| Tencent | `hy3` | 同上 | 免费（知识库问答） |
+| Tencent | `hy4-preview` | 同上 | 免费（知识库问答） |
+| 智谱 | `glm-5.3-flash` | 同上 | 免费（知识库问答） |
 
-> 这里只列本机实测到的代表模型。真实目录由 `provider.models` 在登录后整份替换；
+> 每个基础模型在 ima 目录里还带一个深度思考变体（`deepseek-v4.1-flash-think` 等）；
+> 插件会从 `sub_model_infos` 自动生成。真实目录由 `provider.models` 在登录后整份替换；
 > 装好以后 `magpie plugin list` / 模型选择器里看到的才是账号当前的全部。
 
-**Copilot 积分模型默认不列。** 本机 ima 2.6.15 对 Copilot 问答返回「当前版本暂不支持」；
-更重要的是 Copilot 是 ima 的云端 agent，不是模型通道。需要积分模型时请用别的供应商。
+**Copilot 积分模型默认不列。** 用 `CLIENT-TYPE=256021` 的客户端指纹可以读到完整 Copilot
+目录（Hy3 ×0.2、Hy4 preview ×0.9、DeepSeek-V4.1-Flash ×0.4 峰时、MiMo / GLM / MiniMax / Kimi…），
+但 Copilot 是 ima 的云端 agent（`robot_type=15`），不是模型通道；本插件按“不做云端 agent”的
+定位不接它。免费目录已经包含 V4.1-Flash / Hy3 / Hy4 / GLM-5.3，不需要为了这些模型开 Copilot。
 
 ---
 

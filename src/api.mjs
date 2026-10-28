@@ -5,7 +5,7 @@
 // 这一层把所有网络与错误语义收在一处，钩子层不再判断 code。
 
 import { randomUUID } from "node:crypto"
-import { BASE, CLIENT_VERSION, HOST, IMA_APP_VERSION, IMA_CHROMIUM_VERSION } from "./context.mjs"
+import { BASE, CLIENT_TYPE, CLIENT_VERSION, HOST, IMA_APP_VERSION, IMA_CHROMIUM_VERSION } from "./context.mjs"
 
 export const AUTH_CODES = new Set([41, 600001])
 export const SESSION_CODES = new Set([5, 51])
@@ -48,7 +48,7 @@ export function defaultIua() {
 }
 
 /** 拼 x-ima-cookie。空字段不出现（ima 对空字段比缺字段更敏感） */
-export function cookieFor(auth, clientType = process.platform === "darwin" ? "mac" : "windows") {
+export function cookieFor(auth, clientType = auth?.clientType || process.env.IMA_CLIENT_TYPE || CLIENT_TYPE) {
   const fields = {
     PLATFORM: "H5",
     "CLIENT-TYPE": clientType,

@@ -26,6 +26,7 @@ test("cookieFor：永远给 IMA-IUA，空字段不拼", () => {
   assert.match(cookie, /IMA-UID=u1/)
   assert.match(cookie, /UID-TYPE=2/)
   assert.match(cookie, /TOKEN-TYPE=14/)
+  assert.match(cookie, /CLIENT-TYPE=256021/)
   assert.match(cookie, /IMA-IUA=PR%3DIMA|IMA-IUA=PR=IMA/)
   assert.doesNotMatch(cookie, /IMA-Q36=;/)
   assert.ok(defaultIua().startsWith("PR=IMA"))
@@ -87,6 +88,21 @@ test("buildModels：目录变成 magpie 条目与索引", () => {
   assert.equal(models["model"].free, undefined)
   assert.equal(models["model"].rate, 1)
   assert.equal(index.get("deepseek-v3.2").modelId, "official_3")
+})
+
+test("buildModels：sub_model_infos 变成 -think 变体", () => {
+  const { models, index } = buildModels([
+    {
+      model_type: 3,
+      model_id: "official_3",
+      model_name: "DeepSeek-V4.1-Flash",
+      model_token_copywriting: "",
+      sub_model_infos: { "0": { model_type: 3, model_id: "official_3" }, "1": { model_type: 1, model_id: "official_1" } },
+    },
+  ])
+  assert.deepEqual(Object.keys(models), ["deepseek-v4.1-flash", "deepseek-v4.1-flash-think"])
+  assert.equal(index.get("deepseek-v4.1-flash-think").type, 1)
+  assert.equal(models["deepseek-v4.1-flash-think"].capabilities.reasoning, true)
 })
 
 test("SSE：MESSAGE 取 Text，THINKING 取 Message，业务错误看 COMPLETED", () => {

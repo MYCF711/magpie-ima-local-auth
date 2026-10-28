@@ -14,7 +14,7 @@ import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, chmodSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, delimiter } from "node:path"
-import { CLIENT_VERSION } from "./context.mjs"
+import { CLIENT_TYPE, CLIENT_VERSION } from "./context.mjs"
 
 const CACHE_DIR = join(homedir(), ".cache", "magpie", "ima-local-auth")
 export const SEED_FILE = join(CACHE_DIR, "login.json")
@@ -170,6 +170,7 @@ export function normalize(raw) {
     q36: String(raw.q36 ?? ""),
     iua: String(raw.iua ?? ""),
     extensionVersion: String(raw.extensionVersion ?? raw.extension_version ?? CLIENT_VERSION),
+    clientType: String(raw.clientType ?? raw.client_type ?? process.env.IMA_CLIENT_TYPE ?? CLIENT_TYPE),
     accountId: String(raw.accountId ?? uid ?? "ima.copilot"),
     nickname: String(raw.nickname ?? ""),
     source: String(raw.source ?? ""),
@@ -218,6 +219,7 @@ export function saveSeed(state) {
           q36: state.q36,
           iua: state.iua,
           extensionVersion: state.extensionVersion,
+          clientType: state.clientType,
           accountId: state.accountId,
           nickname: state.nickname,
           savedAt: new Date().toISOString(),

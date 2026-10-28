@@ -11,6 +11,10 @@ export const SDK = "@ai-sdk/openai-compatible"
 export const REFRESH_LEAD_MS = 10 * 60_000
 export const TOKEN_TTL_SECONDS = 7200
 export const CLIENT_VERSION = "5.16.12"
+// ima 客户端的 CLIENT-TYPE 指纹。没有它，服务端会退回旧目录（V3.2/HY2.0），
+// 有了它才返回当前账号的 V4.1-Flash / Hy3 / Hy4 / GLM-5.3 目录。
+// 2026-10-28 从 ima 2.6.15 客户端实际请求头抓包得到；可用 IMA_CLIENT_TYPE 覆盖。
+export const CLIENT_TYPE = "256021"
 export const IMA_APP_VERSION = "2.6.15.5280"
 export const IMA_CHROMIUM_VERSION = "150.0.7871.5469"
 
@@ -26,10 +30,14 @@ export const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAA
  * 那些模型在当前账号上不一定能调，列出来反而会 404。
  */
 export const MODELS = [
-  ["deepseek-v3.2", "DeepSeek V3.2", 3, "official_3", false],
-  ["deepseek-v3.2-think", "DeepSeek V3.2 Think", 1, "official_1", true],
-  ["tencent-hy-2.0", "Tencent HY 2.0", 0, "official_0", false],
-  ["tencent-hy-2.0-think", "Tencent HY 2.0 Think", 2, "official_2", true],
+  ["deepseek-v4.1-flash", "DeepSeek-V4.1-Flash", 3, "official_3", false],
+  ["deepseek-v4.1-flash-think", "DeepSeek-V4.1-Flash Think", 1, "official_1", true],
+  ["hy3", "Hy3", 0, "official_0", false],
+  ["hy3-think", "Hy3 Think", 2, "official_2", true],
+  ["hy4-preview", "Hy4 preview", 1001, "official_1001", false],
+  ["hy4-preview-think", "Hy4 preview Think", 1002, "official_1002", true],
+  ["glm-5.3-flash", "GLM-5.3-Flash", 3000, "official_3000", false],
+  ["glm-5.3-flash-think", "GLM-5.3-Flash Think", 3001, "official_3001", true],
 ]
 
 /** 静态模型条目（magpie 的 config.models 必须有内容，未登录也要显示） */

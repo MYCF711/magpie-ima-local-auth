@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.2.0 — 2026-10-28
+
+- **修复客户端指纹**：`x-ima-cookie` 的 `CLIENT-TYPE` 改为 ima 2.6.15 实际值 `256021`。没有它，服务端静默退回旧目录（DeepSeek V3.2 / HY 2.0，Copilot 只有默认模型）；有了它，免费目录变为 **DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash（各带 Think 变体）**，Copilot `scene:1` 也能读到完整积分目录。
+- 静态兜底模型同步为 V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash。
+- `scripts/import-cdp.mjs` 写入 `clientType`；`IMA_CLIENT_TYPE` 可覆盖指纹。
+- README / docs 更正“V4.1 标签实际是 V3.2”的错误归因：那是旧 `CLIENT-TYPE` 造成的降级。
+
 ## 0.1.1 — 2026-10-28
 
 - 兼容 ima 客户端 UI 新版的 `STRUCTURED_BLOCK` 流事件（`Data.text_message` 正文 / `Data.thinking_message` 思考），与旧版 `MESSAGE` / `THINKING` 同时支持。

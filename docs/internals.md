@@ -42,7 +42,7 @@ ima 的 token 有两份：
 实测（2026-10-28，ima 2.6.15.5280 / Chromium 150.0.7871.5469）：
 
 ```
-x-ima-cookie: PLATFORM=H5; CLIENT-TYPE=windows; WEB-VERSION=5.16.12;
+x-ima-cookie: PLATFORM=H5; CLIENT-TYPE=256021; WEB-VERSION=5.16.12;
               IMA-GUID=...; IMA-UID=...; IMA-TOKEN=...; IMA-REFRESH-TOKEN=...;
               UID-TYPE=2; TOKEN-TYPE=14; IMA-IUA=PR=IMA&PP=com.tencent.imawin&PPVN=...
 from_browser_ima: 1
@@ -50,7 +50,12 @@ extension_version: 5.16.12
 x-ima-bkn: djb2(IMA-TOKEN) & 0x7fffffff
 ```
 
-**`IMA-IUA` 是关键。** 少了它，服务端不会报错，只会把整套请求当成匿名：
+**`CLIENT-TYPE=256021` 是指纹钥匙。** 它是 ima 2.6.15 客户端抓包得到的客户端类型；
+用它 `model_manage/get_models` 才会返回账号当前目录（V4.1-Flash / Hy3 / Hy4 / GLM-5.3），
+`{"scene":1}` 才会返回完整 Copilot 目录。用 `windows` 会静默退回旧目录
+（V3.2 / HY2.0，Copilot 只有默认模型）。可用 `IMA_CLIENT_TYPE` 覆盖。
+
+**`IMA-IUA` 也关键。** 少了它，服务端不会报错，只会把整套请求当成匿名：
 `model_manage/get_models` 返回默认目录（DeepSeek-V4.1-Flash / Hy3 / Hy4 / GLM），
 `assistant/qa` 返回 200 但没有 `MESSAGE` 正文。实测只要 IUA 以
 `PR=IMA&PP=com.tencent.imawin&PPVN=<版本>&PL=WIN&COVC=<Chromium 版本>&EV=` 的形式存在，
@@ -82,14 +87,15 @@ HEARTBEAT
 
 | model_type | model_id | 名字 | model_token_copywriting |
 |---|---|---|---|
-| 3 | official_3 | DeepSeek V3.2 | 空 |
-| 1 | official_1 | DeepSeek V3.2 Think | 空 |
-| 0 | official_0 | Tencent HY 2.0 | 空 |
-| 2 | official_2 | Tencent HY 2.0 Think | 空 |
+| 3 | official_3 | DeepSeek-V4.1-Flash | 空 |
+| 0 | official_0 | Hy3 | 空 |
+| 1001 | official_1001 | Hy4 preview | 空 |
+| 3000 | official_3000 | GLM-5.3-Flash | 空 |
 
 `model_token_copywriting` 为空 = 不扣算力，插件标 `free: true`；`×1.0` 之类是积分模型，
-插件标 `rate`。Copilot 的 `scene:1` 在本机只返回「默认模型 ×1.0」，且 `assistant/qa`
-（robot 15）返回 `{"Code":1,"Msg":"当前版本暂不支持"}`；所以默认不列 Copilot。
+插件标 `rate`。`CLIENT-TYPE=256021` 下 `scene:1` 返回完整 Copilot 目录（12 个，含
+V4.1-Flash `official_paid_ep-i2azx8ko`）；但 Copilot 走 `robot_type=15`，是 ima 的云端
+agent，所以默认不列。
 
 ## 6. 被否掉的方案
 
@@ -99,16 +105,18 @@ HEARTBEAT
   实例是否拿到登录态不稳定；每次使用还要拉起/重启客户端。不用。
 - **扫描客户端进程内存**：能找到字符串常量，但 token 不在可检索的明文里；且需要
   ReadProcessMemory 权限，跨版本极脆。不用。
-- **Copilot 积分模型**：本机版本直接「暂不支持」，且它是 agent 通道（today 式结果）。
-  默认不列；代码保留了 `robot_type` 参数，但本版本没有开启。
+- **Copilot 积分模型**：`CLIENT-TYPE=256021` 下已确认可用（V4.1-Flash / Hy3 / Hy4 / MiMo /
+  GLM / MiniMax / Kimi，SSE `STRUCTURED_BLOCK` 流式思考）。但它是 agent 通道
+  （`robot_type=15` + `command_info.type=2000`，today 式结果），按当前约束默认不接。
 
 ## 7. 已验证
 
 2026-10-28，本机 ima 2.6.15.5280：
 
-- 从 profile 导入登录态 → `model_manage/get_models` 返回 4 个免费模型
-- `assistant/qa`（robot 10000, model_type=3）返回 `PLUGIN-OK` / `FACTORY-OK` / `IUA-OK`
-- `THINKING` 事件进 `reasoning_content`；`COMPLETED Code 0` 正常结束
+- 从 profile 导入登录态 → `CLIENT-TYPE=256021` 下 `model_manage/get_models` 返回
+  V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash 四个免费模型
+- `assistant/qa`（robot 10000, model_type=3）返回 `V41-OK`
+- `THINKING` / `STRUCTURED_BLOCK.blockThinking` 进 `reasoning_content`；`COMPLETED Code 0` 正常结束
 - `token_manager/get_balance` 返回算力余额
 - `auth.refresh` 成功换到新 access token（`token_valid_time` 为相对 7200 秒）
 - 插件 factory 的 loader 流式/非流式都返回 200

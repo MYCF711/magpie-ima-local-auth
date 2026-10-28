@@ -1,6 +1,6 @@
 {
   "name": "magpie-ima-local-auth",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "magpie / OpenCode provider plugin for the ima.copilot desktop app: its free DeepSeek and Tencent HY models, imported from the client already signed in on this machine, without pasting cookies.",
   "type": "module",
   "main": "./index.mjs",
