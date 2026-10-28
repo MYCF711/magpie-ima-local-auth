@@ -61,6 +61,23 @@ profile 的 `tencent.wxlogin.account_secret_encrypted`（DPAPI）。插件读后
 （`PR=IMA&PP=com.tencent.imawin&PPVN=<版本>&PL=WIN&COVC=<Chromium 版本>&EV=`）
 就按账号目录回答。所以插件永远补 IUA。
 
+## UI 标签 vs 账号目录（2026-10-28 抓包）
+
+在 ima 2.6.15 客户端里选中 **DeepSeek-V4.1-Flash**（选项带 `_selected`），抓到的
+`POST /cgi-bin/assistant/qa` 请求是：
+
+| UI 模式 | 请求 `model_info` |
+|---|---|
+| 快速 | `{"model_type":3,"model_id":"official_3","enable_enhancement":true}` |
+| 深度 | `{"model_type":1,"model_id":"official_1","enable_enhancement":true}` |
+
+同一账号的 `/model_manage/get_models` 把 `official_3` 标成 **DeepSeek V3.2**，把
+`official_1` 标成 **DeepSeek V3.2 Think**。直接发 `official_3` 时 `QA_START` 自报
+`"model_name":"DeepSeek V3.2"`。
+
+**结论：这个账号的 UI 标签 “DeepSeek-V4.1-Flash” 实际落在 V3.2 的槽位上；UI 的默认模型
+列表和账号目录不一致。** 不同账号 / 客户端版本可能不同，不能拿 UI 标签当模型身份。
+
 ## 与 CodeBuddy / 其它免费源的对比
 
 腾讯 CodeBuddy（CB）已经免费提供 HY3；本机 ima 账号的免费目录只有 DeepSeek V3.2 / Tencent HY 2.0，

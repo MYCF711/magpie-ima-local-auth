@@ -244,16 +244,17 @@ export function streamOpenAI(res, modelId) {
           if (closed) return
           const bad = eventError(name, raw)
           if (bad) return fail(new Error(bad.message))
-          if (name === "THINKING") {
+          // 旧版/知识库模式是 MESSAGE/THINKING；客户端 UI 的新版是 STRUCTURED_BLOCK
+          // 包着 Data.text_message / Data.thinking_message。两种都要认。
+          if (name === "THINKING" || name === "STRUCTURED_BLOCK") {
             const t = eventThinking(raw)
             if (t) delta({ reasoning_content: t })
-            return
           }
-          if (name === "MESSAGE") {
+          if (name === "MESSAGE" || name === "STRUCTURED_BLOCK") {
             const t = eventText(raw)
             if (t) delta({ content: t })
-            return
           }
+          if (name === "THINKING" || name === "MESSAGE" || name === "STRUCTURED_BLOCK") return
           if (CONTROL.has(name)) finish()
         }).then(finish, fail)
       },
@@ -280,8 +281,8 @@ export async function aggregateOpenAI(res, modelId) {
       failed = new Error(bad.message)
       return
     }
-    if (name === "THINKING") thinking += eventThinking(raw)
-    else if (name === "MESSAGE") text += eventText(raw)
+    if (name === "THINKING" || name === "STRUCTURED_BLOCK") thinking += eventThinking(raw)
+    if (name === "MESSAGE" || name === "STRUCTURED_BLOCK") text += eventText(raw)
   })
   if (failed) throw failed
   return {

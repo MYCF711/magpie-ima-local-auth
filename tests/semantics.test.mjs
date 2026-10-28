@@ -92,8 +92,10 @@ test("buildModels：目录变成 magpie 条目与索引", () => {
 test("SSE：MESSAGE 取 Text，THINKING 取 Message，业务错误看 COMPLETED", () => {
   assert.equal(eventText('{"Text":"OK"}'), "OK")
   assert.equal(eventText('{"Data":{"text_message":{"Text":"旧版"}}}'), "旧版")
+  assert.equal(eventText('{"Type":"blockMessage","Data":{"text_message":{"Text":"结构化"}}}'), "结构化")
   assert.equal(eventThinking('{"Message":"思考","Status":1}'), "思考")
   assert.equal(eventThinking('{"Message":"","Status":2,"Tips":"完成"}'), "")
+  assert.equal(eventThinking('{"Type":"blockThinking","Data":{"thinking_message":{"Message":"结构化思考"}}}'), "结构化思考")
   assert.equal(eventError("SUGGEST_QUESTION", '[{"Text":"x"}]'), null)
   assert.deepEqual(eventError("COMPLETED", '{"Code":1,"Msg":"当前版本暂不支持"}'), {
     code: 1,

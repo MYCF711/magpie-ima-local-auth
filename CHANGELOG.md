@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.1.1 — 2026-10-28
+
+- 兼容 ima 客户端 UI 新版的 `STRUCTURED_BLOCK` 流事件（`Data.text_message` 正文 / `Data.thinking_message` 思考），与旧版 `MESSAGE` / `THINKING` 同时支持。
+- 新增 `scripts/import-cdp.mjs`：从带调试端口的 ima.copilot 走 CDP + native bridge 导入登录态。
+- 补充 `docs/evaluation.md`：UI 的 V4.1-Flash 标签在测试账号实际发 `official_3` / `official_1`，账号目录对应 V3.2 / V3.2 Think。
+
 ## 0.1.0 — 2026-10-28
 
 - 首个版本：从本机 ima.copilot 客户端导入登录态（Windows DPAPI / 种子文件），
