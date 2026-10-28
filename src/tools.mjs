@@ -69,6 +69,7 @@ ${defs || "（本次没有可用工具）"}
 {"tool_calls":[{"name":"task_plan","arguments":{"action":"update","goal":"修复登录 bug","steps":[{"id":"1","title":"复现"}]}}]}
 
 不需要调用工具时，直接输出给用户看的自然语言正文。
+**只有在用户明确要求调用某个工具、或任务确实必须依赖工具时，才调用工具；普通问答、闲聊、数数、解释概念不要调用工具。**
 如果已经收到工具结果，请基于结果继续；需要继续调用工具就再输出 tool_calls，否则直接给最终答案。
 ${forced}`
 }
@@ -263,7 +264,7 @@ export async function aggregateToolResponse(res, modelId, tools) {
   )
 }
 
-/** 流式：工具请求先攒后发（工具 JSON 必须完整才能判定），再按 OpenAI chunk 发。 */
+/** 流式：工具模式下先看开头决定“正文流”还是“JSON 工具流”。 */
 export function streamToolResponse(res, modelId, tools, { includeUsage = false } = {}) {
   const responseId = id()
   const created = Math.floor(Date.now() / 1000)
@@ -280,27 +281,77 @@ export function streamToolResponse(res, modelId, tools, { includeUsage = false }
             model: modelId,
             choices: [{ index: 0, delta, finish_reason: finish }],
           })
+
+        // mode:
+        //   empty  = 还没看到第一个非空白字符
+        //   text   = 普通正文，收到多少发多少（真流式）
+        //   json   = 开头像 JSON，先攒着，结束后判定 tool_calls
+        let mode = "empty"
+        let buffer = ""
+        let sawText = false
+
+        const pushText = (t) => {
+          if (!t) return
+          if (mode === "text") {
+            frame({ content: t })
+            return
+          }
+          if (mode === "json") {
+            buffer += t
+            return
+          }
+          buffer += t
+          const lead = buffer.replace(/^\s+/, "")
+          if (!lead) return
+          if (lead[0] === "{" || lead[0] === "[" || lead[0] === "`") {
+            mode = "json"
+            return
+          }
+          mode = "text"
+          frame({ content: buffer })
+          buffer = ""
+          sawText = true
+        }
+
         try {
-          const { text, thinking } = await collect(res)
-          const parsed = parseToolCalls(text, toolNames(tools))
-          const calls = parsed?.calls ?? null
           frame({ role: "assistant" })
-          if (thinking) frame({ reasoning_content: thinking })
-          if (calls) {
-            const openaiCalls = toOpenAIToolCalls(calls)
-            frame({
-              tool_calls: openaiCalls.map((tc, i) => ({
-                index: i,
-                id: tc.id,
-                type: "function",
-                function: { name: tc.function.name, arguments: tc.function.arguments },
-              })),
-            })
-            frame({}, "tool_calls")
+          await readIMAStream(res, (name, raw) => {
+            const bad = eventError(name, raw)
+            if (bad) throw new Error(bad.message)
+            if (name === "THINKING" || name === "STRUCTURED_BLOCK") {
+              const t = eventThinking(raw)
+              if (t) frame({ reasoning_content: t })
+            }
+            if (name === "MESSAGE" || name === "STRUCTURED_BLOCK") pushText(eventText(raw))
+          })
+
+          if (mode === "json") {
+            const parsed = parseToolCalls(buffer, toolNames(tools))
+            if (parsed) {
+              const openaiCalls = toOpenAIToolCalls(parsed.calls)
+              frame({
+                tool_calls: openaiCalls.map((tc, i) => ({
+                  index: i,
+                  id: tc.id,
+                  type: "function",
+                  function: { name: tc.function.name, arguments: tc.function.arguments },
+                })),
+              })
+              frame({}, "tool_calls")
+            } else {
+              if (buffer) frame({ content: buffer })
+              frame({}, "stop")
+            }
+          } else if (mode === "empty") {
+            frame({}, "stop")
+          } else if (!sawText) {
+            // text 模式但 buffer 还没发过（例如首个 delta 只有空白）
+            if (buffer) frame({ content: buffer })
+            frame({}, "stop")
           } else {
-            if (text) frame({ content: text })
             frame({}, "stop")
           }
+
           if (includeUsage) {
             send({ id: responseId, object: "chat.completion.chunk", created, model: modelId, choices: [], usage: USAGE })
           }
@@ -321,5 +372,4 @@ export function streamToolResponse(res, modelId, tools, { includeUsage = false }
     },
   )
 }
-
 export const _toolsInternal = { contract, tryJson, normalizeCalls, USAGE }

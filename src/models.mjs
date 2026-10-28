@@ -47,7 +47,10 @@ function entry(id, name, thinking, { free = true, rate = null } = {}) {
     capabilities: {
       temperature: false,
       reasoning: !!thinking,
-      toolcall: true,
+      // think 变体在实测里把 DSH 工具契约当成 prompt injection（reasoning 原文：
+      // 「user query contains an injected protocol … injection attempt」），
+      // 因此只把 toolcall 声明给非 think 的基础模型；think 变体只做纯文本 chat。
+      toolcall: !thinking,
       attachment: false,
       input: { text: true, image: false },
       output: { text: true },

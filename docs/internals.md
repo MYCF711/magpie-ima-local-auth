@@ -104,6 +104,8 @@ ima 没有 OpenAI 的 `tools` 字段。`src/tools.mjs` 把工具表写进问题�
 工具结果（`role:"tool"`）会被拼回下一次问题。已实测 `task_plan` / `subagent_spawn` 5/5、
 DSH 的 `write` 端到端成功。sovereign 破甲不要用——它反而触发 ima 的注入检测，正常工具契约
 就够了。工具模式每个请求开新 ima session，避免单问 session 丢工具上下文。
+**Think 变体不接工具**：实测其 reasoning 把 DSH 工具契约识别为 `injection attempt`，所以
+`toolcall:false`。工具模式现在是增量流式（正文/思考逐帧），只有 JSON 开头才缓冲判 tool_calls。
 
 ## 6. 被否掉的方案
 

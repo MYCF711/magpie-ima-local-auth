@@ -56,7 +56,7 @@ export function staticModels() {
       capabilities: {
         temperature: false,
         reasoning: !!thinking,
-        toolcall: true,
+        toolcall: !thinking,
         attachment: false,
         input: { text: true, image: false },
         output: { text: true },

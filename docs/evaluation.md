@@ -7,13 +7,12 @@
 
 | 反代对象 | 价值 | 判定 |
 |---|---|---|
-| **免费模型**（DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash + 4 个 Think 变体） | **高** | 4 个基础模型 + 4 个思考变体、不扣算力、支持流式；质量已接近/覆盖 CodeBuddy 免费 HY3 这一档 |
+| **免费模型**（DeepSeek-V4.1-Flash / Hy3 / Hy4 preview / GLM-5.3-Flash + 4 个 Think 变体） | **中低：纯文本 chat 可用；DSH agent 不可用** | 4 个基础 + 4 个思考变体、不扣算力、流式已修；但实测 Think 变体把 DSH 工具契约当 prompt injection，基础模型工具协议只在单测/短提示里稳定，真实 DSH 会话体验差 |
 | **Copilot 积分模型**（Hy3 / Hy4 / V4.1 / MiMo / GLM / MiniMax / Kimi…） | **模型能力高，但本插件不接** | Copilot 是 ima 的云端 agent（`robot_type=15` + `command_info.type=2000`），正是 today 式结果的来源；即使能拿到完整目录也默认不列 |
 | 知识库文件 / 文档管理 | 低（本次不做） | 是 ima 的知识库业务，不是模型；对 magpie 供应商没有直接价值 |
 | 图片生成 / 播客等 | 低（本次不做） | 与 magpie 的 chat 供应商无关 |
 
-**一句话：免费模型这一层的价值是真实的（V4.1-Flash / Hy3 / Hy4 / GLM-5.3 免费）；
-Copilot 积分模型能力更强，但它是云端 agent，按“不能是云端 agent”的约束不接。**
+**一句话：免费模型能当“不要钱的纯文本 chat”用，但达不到“正常 DeepSeek 官方 API”的 agent 体验——把它当 DSH 模型后端不值得；Copilot 积分模型能力更强，但它是云端 agent，按约束不接。**
 
 ## 关键发现：`CLIENT-TYPE=256021` 是指纹钥匙
 
@@ -120,8 +119,15 @@ sovereign 破甲反而触发它的注入检测，不要用。
 | sovereign 破甲 + 强制改身份 | 免费/Copilot 都识别为注入并拒绝，**不要用破甲** |
 
 实现：`src/tools.mjs` 把 OpenAI tools 写成提示，解析 `{"tool_calls":[...]}` 转成
-OpenAI tool_calls；`toolcall: true`；流式工具请求先攒后发（工具 JSON 必须完整）。
-工具调用不是 ima 原生能力，是文本协议模拟，但已达到正常 API 的可用形态。
+OpenAI tool_calls；**基础模型 `toolcall: true`，Think 变体 `toolcall: false`**（实测 Think
+把 DSH 工具契约识别为 `injection attempt`）。工具模式已改为增量流式：正文/思考逐帧，
+只有开头像 JSON 时才缓冲判 tool_calls。工具调用仍是文本协议模拟，不是 ima 原生能力。
+
+**真实使用体验（2026-10-28 本会话直接切到 `ima/deepseek-v4.1-flash-think`）**：
+模型把 DSH 的工具/上下文当成外部注入，绕了一大圈解释自己“只有 search/fetch/image_gen/
+mindmap_gen/memory_recall”这些 ima 自带工具，没有执行 DSH 任务；输出冗长、结论不可信，
+且看起来不是流式。这是“不能是云端 agent”那条约束的现场证据：**不是模型没能力，是它不
+接受调用方的 system prompt + tools。**
 
 ## 与 CodeBuddy / 其它免费源的对比
 

@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.3.1 — 2026-10-28
+
+- **工具模式改为增量流式**：不再 `collect()` 全部收完再发。正文逐帧 `delta.content`，思考逐帧 `delta.reasoning_content`；只有开头像 JSON（`{` / `[` / ```）时才缓冲到结尾判定 `tool_calls`。修复 DSH 下“看起来不是流式”的问题。
+- **Think 变体不再声明工具能力**：实测 `deepseek-v4.1-flash-think` 会把 DSH 工具契约识别成 prompt injection（reasoning 原文明确说 injection attempt），因此 `toolcall:false`，只做纯文本 chat；基础模型保留 `toolcall:true`。
+- 工具契约加一条“普通问答/闲聊/数数不要调用工具”，降低误触发。
+
 ## 0.3.0 — 2026-10-28
 
 - **工具调用**：新增 `src/tools.mjs` 文本工具协议。把 OpenAI tools 写成提示，解析模型输出
