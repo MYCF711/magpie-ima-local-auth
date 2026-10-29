@@ -1,0 +1,25 @@
+name: check
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 供应商插件规定
+        run: node scripts/check.mjs
+      - name: 语义测试
+        run: npm test
+      - name: 打包面预演
+        run: npm pack --dry-run
