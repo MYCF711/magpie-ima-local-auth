@@ -20,5 +20,6 @@
 
 ## 发版
 
-`scripts/release.mjs`（预演 → `--yes`），或按 scaffold 的 `UPDATING.md` 七步走。
-`git push` 只是第 4 步；npm publish、tag + GitHub Release、四条验证一个都不能少。
+禁止直接推 main。只能推功能分支，PR 的 `rules` 全绿并合并后，运行
+`scripts/release.mjs`（预演 → `--yes`）；脚本会拒绝未合并 HEAD，且不推 main。
+npm publish、tag + GitHub Release、五条验证一个都不能少。
