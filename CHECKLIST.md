@@ -18,7 +18,7 @@
 - [ ] CHANGELOG 有当前版本
 - [ ] bump version
 - [ ] `npm pack --dry-run` 看到 README / CHANGELOG / docs
-- [ ] commit + push 默认分支
+- [ ] commit + push 功能分支，PR 的 `rules` 全绿后合并（禁止直接推 main）
 - [ ] `npm publish`
 - [ ] tag `v<version>` + GitHub Release
 - [ ] 四条验证：npm version / tarball / magpie plugin list / Release 200
