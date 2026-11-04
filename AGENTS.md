@@ -23,3 +23,24 @@
 禁止直接推 main。只能推功能分支，PR 的 `rules` 全绿并合并后，运行
 `scripts/release.mjs`（预演 → `--yes`）；脚本会拒绝未合并 HEAD，且不推 main。
 npm publish、tag + GitHub Release、五条验证一个都不能少。
+
+## 出站 User-Agent（模板坑表第 38 条）
+
+上游网关按 `<product>/<version>` 形态识别「第三方客户端」，命中即回
+`403 {{"error_code":"TM.00000001","error_msg":"网络繁忙，请稍后重试"}}` —— **文案说的是「网络繁忙」**，
+看不出是 UA 的锅。而 magpie 给插件的请求带 `User-Agent: magpie/<version>`，插件不显式设 UA 就把它透传上去，
+同样命中。
+
+两条规矩，缺一都不算过：
+
+1. 每个打上游的 `fetch` 都**显式**带 `User-Agent`；
+2. 值是**该服务官方客户端**的 UA —— 绝不写 `<包名>/<版本号>`、`node`、`Bun/…`、截断的 Mozilla。
+
+官方 UA 按优先级取：① 仓库里已抓到的官方 UA 逐字节照抄；② 有 App / CLI / Electron 客户端的用那个客户端的
+token（`WorkBuddy/<app> … CLI/<ver>`、`aipy-pro/…`、`Loomy|Desktop|Electron|macOS`、`okhttp/4.12.0`）；
+③ 官方是网页的用完整 Chrome UA
+`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36`。
+
+`loader` 的 `fetch` 包装里，`"user-agent"` 必须在跳过名单内，再由插件补官方值。
+
+判据：`node scripts/check-ua.mjs` 退出 0。
